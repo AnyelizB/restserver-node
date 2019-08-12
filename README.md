@@ -178,4 +178,25 @@ process.env.PORT = process.env.PORT || 3000
 
 ```
 
+### Otra manera de crear repo em heroku
 
+desde la terminal
+
+```
+heroku create
+```
+
+```
+git remote
+```
+
+```
+git remote -v
+```
+Si aparece un error se debe colocar el *heroku login*
+
+Esto es si ya heroku cli esta instalado sino ver los readme de las otras repo
+
+```git push heroku master```
+
+```heroku open```
