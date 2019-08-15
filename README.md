@@ -1008,6 +1008,13 @@ heroku open
 
 ```
 
+6. Revisar en postman produccion que es con la url del heroku /usuario
+
+### Creando la bd desde robo3T para mongo atlas
+
+1. Nueva conexión desde el robo3T ( revisar mongo shell 111)
+
+
 
 
 
