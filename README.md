@@ -974,7 +974,7 @@ mongoose.connect(process.env.URLBD, {useCreateIndex:true, useNewUrlParser: true}
 .catch(err => console.log(err));
 ```
 
-### Desplegar la app a HEROKU
+### Desplegar la app a HEROKU ya con cambios
 
 1. Desde la terminal del projecto 
 
@@ -983,6 +983,30 @@ git status
 
 ```
 
+2. Agregar los cambios
+
+```
+git add .
+
+```
+3. Agregar el commit
+
+```
+git commit -m "RestServer - usuario"
+```
+
+4. Agregar los cambios a HEROKU
+
+```
+git push heroku master
+```
+
+5. Abrir el heroku 
+
+```
+heroku open
+
+```
 
 
 
