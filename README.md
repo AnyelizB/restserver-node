@@ -1015,6 +1015,890 @@ heroku open
 1. Nueva conexión desde el robo3T ( revisar mongo shell 111)
 
 
+## Generar TOKENS con JWT y probando con una función desde la consola 
+
+La página utilizada para generar tokens es la siguiente [Página](https://jwt.io/#debugger)
+
+1. Para sacar la información de un token, desde la consola del navegador copiamos el siguiente codigo:
+
+```
+function parseJwt (token) {
+    var base64Url = token.split('.')[1];
+    var base64 = base64Url.replace('-', '+').replace('_', '/');
+    return JSON.parse(window.atob(base64));
+};
+```
+
+luego enter y agregamos el token que tenemos:
+
+```let token = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkFueWVsaXogUmljbyIsImlhdCI6MTUxNjIzOTAyMn0.twXXZs0kbF6qaBeUJJ9Y1R_7QeW93oGAblu8cgBZNRM'```
+
+*enter*
+
+Ahora corremos la función:
+
+```
+parseJwt(token)
+
+```
+*enter*
+
+Esto nos desplega la información introducida en el token, por parte del payload 
+
+### Ordenando las Rutas en el servidor JWT
+
+1. Crear el archivo login en *routes/login.js*
+
+```
+
+const express = require('express');
+const bcrypt = require('bcrypt');
+
+const app=express();// instancia
+
+const Usuario = require('../models/usuario');
+
+app.post('/login', (req, res)=> {
+
+        res.json({
+            ok:true
+          //  message: 'usuarioDB'
+        });
+        
+});
+
+module.exports = app
+
+
+```
+
+2. En el server.js se agrega la ruta requerida:
+
+```
+app.use(require('./routes/usuario'));
+app.use(require('./routes/login'));
+
+```
+
+4. Para ordenar las rutas desde un archivo principal, para no tener la necesidad de colocar todas las rutas en el *server.js*, se crea un archivo routes/index.js 
+
+*index.js*
+
+```
+const express = require('express');
+
+const app=express();// instancia
+
+app.use(require('./usuario'));
+app.use(require('./login'));
+
+
+module.exports = app;
+
+
+
+```
+
+5. Ahora en el server.js solo dejamos :
+
+
+```
+//Configuracion Global de rutas
+app.use(require('./routes/index'));
+
+```
+
+## Login de Usuario
+
+En el archivo login.js se modifica de la siguiente manera:
+
+
+```
+const express = require('express');
+const bcrypt = require('bcrypt');
+
+const app=express();// instancia
+
+const Usuario = require('../models/usuario');
+
+app.post('/login', (req, res)=> {
+        let body= req.body;
+
+        Usuario.findOne({email: body.email}, (err, usuarioDB)=> {
+            if(err){
+                return res.status(500).json({
+                    ok: false,
+                    err
+                });
+            };
+            if(!usuarioDB){
+                return res.status(400).json({
+                    ok: false,
+                    err:{
+                        message:'(Usuario) ó contraseña incorrectos'
+                    }
+                });
+            }
+            if(!bcrypt.compareSync(body.password, usuarioDB.password)){
+
+                return res.status(400).json({
+                    ok: false,
+                    err:{
+                        message:'Usuario ó (contraseña) incorrectos'
+                    }
+                });
+
+            }// si la contraseña hace match, se va a comparar ya que esta encriptada
+            res.json({
+                ok:true,
+                usuario: usuarioDB,
+                token:123
+            });
+        })
+        
+});
+
+module.exports = app
+
+
+
+
+```
+
+## Generar el token con JSON Web Token
+
+Sirve para enviar datos de inicio de sesión 
+
+Para eso debemos instalar JsonWebToken
+
+```
+npm install jsonwebtoken --save
+
+```
+
+2. En el archivo *login.js* agregamos el jwt 
+
+```
+
+const jwt = require('jsonwebtoken');
+
+
+app.post('/login', (req, res)=> {
+        let body= req.body;
+
+       .
+       .
+       .
+            let token= jwt.sign({
+                usuario: usuarioDB,
+
+            },'este-es-el-set-de-desarrollo', {expiresIn: 60*60*24*30}) // expira en 30dias
+            res.json({
+                ok:true,
+                usuario: usuarioDB,
+                token:token
+            });
+        })
+
+
+        
+});
+
+```
+
+quedando de la siguiente manera:
+
+```
+
+const express = require('express');
+const bcrypt = require('bcrypt');
+const jwt = require('jsonwebtoken');
+
+const app=express();// instancia
+
+const Usuario = require('../models/usuario');
+
+app.post('/login', (req, res)=> {
+        let body= req.body;
+
+        Usuario.findOne({email: body.email}, (err, usuarioDB)=> {
+            if(err){
+                return res.status(500).json({
+                    ok: false,
+                    err
+                });
+            };
+            if(!usuarioDB){
+                return res.status(500).json({
+                    ok: false,
+                    err:{
+                        message:'(Usuario) ó contraseña incorrectos'
+                    }
+                });
+            }
+            if(!bcrypt.compareSync(body.password, usuarioDB.password)){
+
+                return res.status(400).json({
+                    ok: false,
+                    err:{
+                        message:'Usuario ó (contraseña) incorrectos'
+                    }
+                });
+
+            }// si la contraseña hace match, se va a comparar ya que esta encriptada
+            let token= jwt.sign({
+                usuario: usuarioDB,
+
+            },'este-es-el-set-de-desarrollo', {expiresIn: 60*60*24*30}) // expira en 30dias
+            res.json({
+                ok:true,
+                usuario: usuarioDB,
+                token:token
+            });
+        })
+        
+});
+
+module.exports = app
+
+
+```
+
+3. Para revisarlo en el postman colocamos 
+
+localhost:3000/login
+
+post
+
+email: ... a consultar
+password: ... a consultar
+
+esto debe traernos el token y los valores a consultar
+
+4. Tomamos el token y verificamos en el jwt.io los datos que suministramos para el token.
+
+### Creando variable global en config para la caducidad del token
+
+1. Nos vamos al archivo *config.js* y agregamos:
+
+
+```
+// ================
+// VENCIMIENTO DEL TOKEN
+// ================
+
+//60 SEGUNDOS
+//60 MINUTOS
+//24 HORAS
+//30
+
+process.env.CADUCIDAD_TOKEN = 60*60*24*30
+
+```
+
+2. En el archivo login.js cambiamos expiresIn a lo siguiente:
+
+```
+let token= jwt.sign({
+    usuario: usuarioDB,
+
+},'este-es-el-set-de-desarrollo', {expiresIn: process.env.CADUCIDAD_TOKEN}) // expira en 30dias
+           
+
+```
+
+### Creando variable global con la contraseña del token y generar la variable de entorno con heroku config 
+*config.js*
+```
+
+
+// ================
+// SEED DE AUTENTICACION
+// ================
+process.env.SEED= process.env.SEED || 'este-es-el-set-de-desarrollo'
+
+
+```
+
+2. En el archivo *login.js* cambiamos a lo siguiente:
+
+```
+ let token= jwt.sign({
+        usuario: usuarioDB,
+
+    },process.env.SEED , {expiresIn: process.env.CADUCIDAD_TOKEN}) // expira en 30dias
+    res.json({
+        ok:true,
+        usuario: usuarioDB,
+        token:token
+    });
+
+```
+
+### Proteger rutas mediante uso de token -Middleware -verificar token con *verify*
+
+1. Se crea el archivo autentication.js dentro de una carpeta que se llamara middlewares
+
+*middlewares/autentication.js*
+```
+
+const jwt = require('jsonwebtoken');
+//===================
+//VERIFICAR TOKEN
+//===================
+
+let verificaToken= (req, res, next) => {
+    //leer los headers
+    let token = req.get('token'); // obtengo los headers
+    jwt.verify(token, process.env.SEED, (err, decoded)=>{
+        if(err){
+            return res.status(400).json({
+                ok:false,
+                err
+            });
+        }
+        req.usuario= decoded.usuario;
+        next()
+    });
+    // res.json({
+    //     token
+    // })
+  //  next(); // se debe colocar el next para que continue con lo que resta de la funcion en el get de usuario
+};
+module.exports = {verificaToken}
+
+```
+2. Dentro del archivo de *routes/usuario.js* se agrega *verificaToken*
+
+```
+
+
+const {verificaToken} =require('../middlewares/autenticacion');
+
+.
+.
+.
+
+app.get('/usuario', verificaToken , (req, res)=>{
+    let desde = req.query.desde || 0;
+    desde= Number(desde)
+
+    let limite = req.query.limite || 5; // sino me especifica el limite entonces 5
+    limite = Number(limite)
+
+
+    // traer el usuario solo los que tengan estado true
+    Usuario.find({estado: true}, 'nombre email role estado google img')
+        .skip(desde) // salte los primero 5
+        .limit(limite)// trae los primeros 5
+        .exec((err,usuarios)=>{
+            if(err){
+                return res.status(400).json({
+                    ok:false,
+                    err
+                });
+
+            }
+            Usuario.count({estado: true}, (err, conteo)=>{
+                res.json({
+                    ok: true,
+                    usuarios: usuarios,
+                    cuantos: conteo
+                })
+            })//cuenta el registro en este caso los que tengan google: true, si lo retiramos nos trae el conteo de registro en la bd
+          
+        })//ejecuta exec pq vamos a llevar mas metodos
+
+   // res.json('get Usuario Local')
+
+})
+.
+.
+.
+
+
+```
+
+3. Quedando el archivo de *usuario.js* de la siguiente manera con la autenticación de token:
+
+```
+
+const express = require('express');
+const bcrypt = require('bcrypt');
+const _ = require('underscore')
+const app=express();// instancia
+
+const Usuario = require('../models/usuario');
+
+const {verificaToken} =require('../middlewares/autenticacion');
+
+
+
+
+// app.get('/', (req, res)=>{
+
+//     res.json('Hola Mundo')
+
+// })
+app.get('/usuario' ,verificaToken,  (req, res)=>{
+    let desde = req.query.desde || 0;
+    desde= Number(desde)
+
+    let limite = req.query.limite || 5; // sino me especifica el limite entonces 5
+    limite = Number(limite)
+
+
+    // traer el usuario solo los que tengan estado true
+    Usuario.find({estado: true}, 'nombre email role estado google img')
+        .skip(desde) // salte los primero 5
+        .limit(limite)// trae los primeros 5
+        .exec((err,usuarios)=>{
+            if(err){
+                return res.status(400).json({
+                    ok:false,
+                    err
+                });
+
+            }
+            Usuario.count({estado: true}, (err, conteo)=>{
+                res.json({
+                    ok: true,
+                    usuarios: usuarios,
+                    cuantos: conteo
+                })
+            })//cuenta el registro en este caso los que tengan google: true, si lo retiramos nos trae el conteo de registro en la bd
+          
+        })//ejecuta exec pq vamos a llevar mas metodos
+
+   // res.json('get Usuario Local')
+
+})
+app.post('/usuario', (req, res)=>{
+    let body= req.body
+
+    let usuario= new Usuario({
+        nombre: body.nombre,
+        email: body.email,
+        password: bcrypt.hashSync(body.password, 10),
+        role: body.role
+    })
+    usuario.save((err,usuarioDB)=>{
+        if(err){
+            return res.status(400).json({
+                ok:false,
+                err
+            });
+        }
+
+        res.json({
+            ok:true,
+            usuario: usuarioDB
+        });
+        
+    });
+
+    // if(body.nombre === undefined){
+
+    //     res.status(400).json({
+    //         ok: false,
+    //         mensaje: "El nombre es necesario"
+    //     })
+
+    // }else{
+    //     res.json({
+    //         persona: body
+    //     })
+
+    // }
+
+
+})
+app.put('/usuario/:id', (req, res)=>{
+
+    let id=req.params.id;
+    //let body = req.body;
+    let body = _.pick(req.body, ['nombre', 'email', 'img', 'role', 'estado'] );
+
+    Usuario.findByIdAndUpdate(id, body, {new: true, runValidators: true} ,(err, usuarioDB)=>{
+        if(err){
+            return res.status(400).json({
+                ok:false,
+                err
+            });
+        }
+
+        res.json({
+            ok: true,
+            usuario: usuarioDB
+        })
+    })
+
+})
+app.delete('/usuario/:id', (req, res)=>{
+
+    let id = req.params.id;
+    let cambiaEstado = {
+        estado: false
+    };
+   
+    Usuario.findByIdAndUpdate(id, cambiaEstado, {new: true}, (err, usuarioBorrado)=>{
+        if(err){
+            return res.status(400).json({
+                ok: false,
+                err
+            });
+        };
+        if (!usuarioBorrado){
+            return res.status(400).json({
+                ok:false,
+                error:{
+                    message: 'Usuario no encontrado'
+                }
+            })
+        }
+        
+        // Usuario.findByIdAndUpdate({_id:req.body._id},{estado:false})
+
+        res.json({
+            ok:true,
+            usuario: usuarioBorrado
+        });
+    });
+
+   // res.json('delete Usuario')
+
+})
+
+module.exports = app
+
+
+
+
+```
+
+### Obtener información del Payload en cualquier servicio
+
+En esta sección aprenderemos como extraer informacion del token de manera independiente:
+
+*routes/usuario.js*
+
+```
+
+
+app.get('/usuario' ,verificaToken,  (req, res)=>{
+  // extre información independiente
+    return res.json({
+        usuario: req.usuario,
+        nombre: req.usuario.nombre,
+        email:req.usuario.email
+    });
+
+    let desde = req.query.desde || 0;
+    desde= Number(desde)
+
+    let limite = req.query.limite || 5; // sino me especifica el limite entonces 5
+    limite = Number(limite)
+
+
+    // traer el usuario solo los que tengan estado true
+    Usuario.find({estado: true}, 'nombre email role estado google img')
+        .skip(desde) // salte los primero 5
+        .limit(limite)// trae los primeros 5
+        .exec((err,usuarios)=>{
+            if(err){
+                return res.status(400).json({
+                    ok:false,
+                    err
+                });
+
+            }
+            Usuario.count({estado: true}, (err, conteo)=>{
+                res.json({
+                    ok: true,
+                    usuarios: usuarios,
+                    cuantos: conteo
+                })
+            })//cuenta el registro en este caso los que tengan google: true, si lo retiramos nos trae el conteo de registro en la bd
+          
+        })//ejecuta exec pq vamos a llevar mas metodos
+
+   // res.json('get Usuario Local')
+
+})
+
+
+```
+1. Desde el postman post -> login 
+Body -> key : email-> test5@gmail.com, password-> 123456
+Se genera el token.
+
+2. Desde el postman get -> usuario 
+
+headers-> key : token -> value: el token generado en el get del usuario
+
+el resultado sera nombre: "...", email: "..."
+
+### Proteger rutas mediante uso de token- Middlewares
+
+1. En el archivo autenticacion.js se agrega el verificar ADMIN ROL para que el que puede ingresar como administrador sea capaz de editar borrar y agregar usuarios:
+
+*autenticacion.js*
+
+```
+const jwt = require('jsonwebtoken');
+//===================
+//VERIFICAR TOKEN
+//===================
+
+let verificaToken= (req, res, next) => {
+    //leer los headers
+    let token = req.get('token');
+    jwt.verify(token, process.env.SEED, (err, decoded)=>{
+        if(err){
+            return res.status(400).json({
+                ok:false,
+                err:{
+                    message:'Token no valido'
+                }
+            });
+        }
+        req.usuario= decoded.usuario;
+        next()
+    });
+    // res.json({
+    //     token
+    // })
+  //  next(); // ahy que colocar el next para que continue con lo que resta de la funcion en el get de usuario
+};
+
+//===================
+//VERIFICAR ADMIN ROL
+//===================
+
+let verificaAdmin_Role= (req, res, next) => {
+    let usuario = req.usuario;
+
+    if(usuario.role === 'ADMIN_ROLE'){
+        //req.usuario= decoded.usuario;
+        next();
+    }else{
+        res.json({
+            ok:false,
+            err:{
+                message: 'El usuario no es administrador'
+            }
+        })
+    
+    }
+   
+
+};
+module.exports = {verificaToken,verificaAdmin_Role}
+
+```
+
+2. Agregar en el *usuario.js*  verificaAdmin_Role
+
+```
+
+const express = require('express');
+const bcrypt = require('bcrypt');
+const _ = require('underscore')
+const app=express();// instancia
+
+const Usuario = require('../models/usuario');
+
+const {verificaToken, verificaAdmin_Role} =require('../middlewares/autenticacion');
+
+
+
+
+
+// app.get('/', (req, res)=>{
+
+//     res.json('Hola Mundo')
+
+// })
+app.get('/usuario',verificaToken,  (req, res)=>{
+  // extre información independiente
+    return res.json({
+        usuario: req.usuario,
+        nombre: req.usuario.nombre,
+        email:req.usuario.email
+    });
+
+    let desde = req.query.desde || 0;
+    desde= Number(desde)
+
+    let limite = req.query.limite || 5; // sino me especifica el limite entonces 5
+    limite = Number(limite)
+
+
+    // traer el usuario solo los que tengan estado true
+    Usuario.find({estado: true}, 'nombre email role estado google img')
+        .skip(desde) // salte los primero 5
+        .limit(limite)// trae los primeros 5
+        .exec((err,usuarios)=>{
+            if(err){
+                return res.status(400).json({
+                    ok:false,
+                    err
+                });
+
+            }
+            Usuario.count({estado: true}, (err, conteo)=>{
+                res.json({
+                    ok: true,
+                    usuarios: usuarios,
+                    cuantos: conteo
+                })
+            })//cuenta el registro en este caso los que tengan google: true, si lo retiramos nos trae el conteo de registro en la bd
+          
+        })//ejecuta exec pq vamos a llevar mas metodos
+
+   // res.json('get Usuario Local')
+
+})
+app.post('/usuario',[verificaToken, verificaAdmin_Role], (req, res)=>{
+    let body= req.body
+
+    let usuario= new Usuario({
+        nombre: body.nombre,
+        email: body.email,
+        password: bcrypt.hashSync(body.password, 10),
+        role: body.role
+    })
+    usuario.save((err,usuarioDB)=>{
+        if(err){
+            return res.status(400).json({
+                ok:false,
+                err
+            });
+        }
+
+        res.json({
+            ok:true,
+            usuario: usuarioDB
+        });
+        
+    });
+
+    // if(body.nombre === undefined){
+
+    //     res.status(400).json({
+    //         ok: false,
+    //         mensaje: "El nombre es necesario"
+    //     })
+
+    // }else{
+    //     res.json({
+    //         persona: body
+    //     })
+
+    // }
+
+
+})
+app.put('/usuario/:id', [verificaToken, verificaAdmin_Role], (req, res)=>{
+
+    let id=req.params.id;
+    //let body = req.body;
+    let body = _.pick(req.body, ['nombre', 'email', 'img', 'role', 'estado'] );
+
+    Usuario.findByIdAndUpdate(id, body, {new: true, runValidators: true} ,(err, usuarioDB)=>{
+        if(err){
+            return res.status(400).json({
+                ok:false,
+                err
+            });
+        }
+
+        res.json({
+            ok: true,
+            usuario: usuarioDB
+        })
+    })
+
+})
+app.delete('/usuario/:id', [verificaToken, verificaAdmin_Role], (req, res)=>{
+
+    let id = req.params.id;
+    let cambiaEstado = {
+        estado: false
+    };
+   
+    Usuario.findByIdAndUpdate(id, cambiaEstado, {new: true}, (err, usuarioBorrado)=>{
+        if(err){
+            return res.status(400).json({
+                ok: false,
+                err
+            });
+        };
+        if (!usuarioBorrado){
+            return res.status(400).json({
+                ok:false,
+                error:{
+                    message: 'Usuario no encontrado'
+                }
+            })
+        }
+        
+        // Usuario.findByIdAndUpdate({_id:req.body._id},{estado:false})
+
+        res.json({
+            ok:true,
+            usuario: usuarioBorrado
+        });
+    });
+
+   // res.json('delete Usuario')
+
+})
+
+module.exports = app
+
+
+
+```
+
+### Variables de entorno automatica - POSTMAN tips
+
+1. Desde el postman se agrega en el post de login
+test-> 
+let token = pm.response.json();
+console.log(token);
+
+Se busca la consola en View -> Developer->ShowDevTools
+ y en la consola vamos a obtener los datos del usuario
+
+2. Para obtener el valor del token. Desde el postman se agrega en el post de login
+test-> 
+```
+
+let resp = pm.response.json();
+console.log(resp)
+if(resp.ok){
+        let token = resp.token;
+        pm.environment.set("token", token);
+        
+}else{
+    console.log('No se almaceno el token');
+}
+
+```
+
+
+Se busca la consola en View -> Developer->ShowDevTools
+ y en la consola vamos a obtener los datos del usuario
+
+
+
+
+
+
+
+
+
 
 
 

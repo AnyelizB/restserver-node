@@ -15,11 +15,17 @@ app.use(bodyParser.json())
 
 
 //--------------USANDO EL ARCHIVO USUARIO.JS--------------------//
-app.use(require('./routes/usuario'),(req, res) => {
-    console.log('Time:', Date.now());
-  }
+// app.use(require('./routes/usuario'),(req, res) => {
+//     console.log('Time:', Date.now());
+//   }
 
-);
+// );
+//----------------------------------//
+
+//--------------USANDO EL ARCHIVO LOGIN.JS--------------------//
+//Configuracion Global de rutas
+app.use(require('./routes/index'));
+
 //----------------------------------//
 
 mongoose.Promise=global.Promise;
