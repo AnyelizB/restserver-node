@@ -2653,6 +2653,259 @@ volvemos al link de desarrollo en el postman y observamos el token generado
 2. Seleccionar el contenido Desarrollo o el que tengas, dar a clic publicar.
 
 
+### Guardar en Heroku y compilar
+
+1. Guardamos desde la terminal con :
+ - git add .
+ - git push 
+ - git push heroku master
+ - heroku open
+ - git tag -a v0.0.0 -m "commit"
+ - git push --tags
+
+2. Ir a `https://console.developers.google.com`
+
+y colocar el enlace que da por error desde la console del enlace del heroku open
+
+3. Esperar unos 15 minutos ó más para la propagación de los dominios
+
+4. Acceder y revisar en la cuenta de MongoDB Atlas
+
+## CRUD y rutas de Categorías
+
+### Crear archivo categoria en el modelo
+
+1. Crear en *models/categoria.js*
+
+```
+const mongoose = require('mongoose')
+const Schema = mongoose.Schema;
+
+let categoriaSchema = new Schema({
+    descripcion: { type: String, unique: true, required: [true, 'La descripción es obligatoria'] },
+    usuario: { type: Schema.Types.ObjectId, ref: 'Usuario' }
+});
+
+
+module.exports = mongoose.model('Categoria', categoriaSchema);
+
+```
+
+2. Crear en *routes/categoria.js*
+Creando POST y PUT 
+
+```
+const express = require('express');
+
+const { verificaToken, verificaAdmin_Role } = require('../middlewares/autenticacion');
+
+let app = express();
+
+
+
+let Categoria = require('../models/categoria');
+//===========================
+//Mostrar todas las categorias
+//===========================
+app.get('/categoria', (req,res)=>{
+
+
+
+})
+
+//===========================
+//Mostrar categoria por ID
+//===========================
+
+app.get('/categoria/:id', (req,res)=>{
+// Categoria.findById(...)
+let id = req.params.id;
+
+    Categoria.findById(id, (err, categoriaDB) =>{
+        if(err){
+            return res.status(400).json({
+                ok:false,
+                err
+            });
+        }
+        res.json({
+            ok: true,
+            categoria: categoriaDB
+        });
+
+    })
+
+})
+
+//===========================
+//Crear nueva categoria
+//===========================
+
+app.post('/categoria', verificaToken, (req, res) => {
+    // regresa la nueva categoria
+    // req.usuario._id
+    let body = req.body;
+
+    let categoria = new Categoria({
+        descripcion: body.descripcion,
+        usuario: req.usuario._id
+    });
+
+
+    categoria.save((err, categoriaDB) => {
+
+        if (err) {
+            return res.status(500).json({
+                ok: false,
+                err
+            });
+        }
+
+        if (!categoriaDB) {
+            return res.status(400).json({
+                ok: false,
+                err
+            });
+        }
+
+        res.json({
+            ok: true,
+            categoria: categoriaDB
+        });
+
+
+    });
+
+
+});
+
+//===========================
+//
+//===========================
+
+
+app.put('/categoria/:id', verificaToken, (req, res) => {
+
+    let id = req.params.id;
+    let body = req.body;
+
+    let descCategoria = {
+        descripcion: body.descripcion
+    };
+
+    Categoria.findByIdAndUpdate(id, descCategoria, { new: true, runValidators: true }, (err, categoriaDB) => {
+
+        if (err) {
+            return res.status(500).json({
+                ok: false,
+                err
+            });
+        }
+
+        if (!categoriaDB) {
+            return res.status(400).json({
+                ok: false,
+                err
+            });
+        }
+
+        res.json({
+            ok: true,
+            categoria: categoriaDB
+        });
+
+    });
+
+
+});
+
+/*
+//===========================
+//
+//===========================
+
+app.delete('/categoria:id', [verificaAdmin_Role], (req,res)=>{
+   
+    // solo el administrador puede borrar categorias
+    // Categoria.findByIdAndDelete
+    let id = req.params.id;
+    Categoria.findByIdAndUpdate(id, (err, categoriaBorrada)=>{
+        if(err){
+            return res.status(400).json({
+                ok:false,
+                err:{
+                    message: "No se ha logrado borrar la categoria"
+                }
+            })
+
+        };
+        if(!categoriaBorrada){
+            return res.status(400).json({
+                ok:false,
+                err:{
+                    message: 'Categoria no encontrada'
+                }
+            })
+        }
+
+       res.json({
+           ok:true,
+           categoria: categoriaBorrada
+       })  
+    })
+})
+
+*/
+
+module.exports = app;
+
+
+```
+3. Agregar la categoria en el index : *routes/index.js*
+
+```
+const express = require('express');
+
+const app=express();// instancia
+
+app.use(require('./usuario'));
+app.use(require('./login'));
+app.use(require('./categoria')); // agregada
+
+
+module.exports = app;
+
+```
+
+4. Verificar en el postman 
+
+ categoria: post 
+
+ POST -> {{url}}/categoria
+
+ body -> descripcion -> Bebida Caliente
+headers -> Content-Type -> application/x-www-form-urlencoded
+            token -> {{token}}
+
+*No olvides actualizar el token*
+
+--------------------------------
+
+ categoria: put 
+
+ POST -> {{url}}/categoria/coloca_el_id_de_la_bd_de_esa_categoria
+
+ body -> descripcion -> Bebida Fria Actualizada
+ headers -> Content-Type -> application/x-www-form-urlencoded
+            token -> {{token}}
+
+
+
+
+
+
+
+
 
 
 
