@@ -1892,6 +1892,766 @@ Se busca la consola en View -> Developer->ShowDevTools
  y en la consola vamos a obtener los datos del usuario
 
 
+## Google Sign In - Front and BackEnd
+
+### Obtención del API Key y API Secret de Google
+
+1. Abrir el enlace de [Google](https://developers.google.com/identity/sign-in/web/sign-in)
+
+2. Dar clic en config Project y agregar el proyecto.
+El tipo de proyecto sera web Browser ( next). Clic a API Console
+3. Credenciales 
+   3.1 Crear Credenciales -> ID de cliente de OAuth -> Aplicación web -> nombre : Google-SignIn-Node (el que desee) -> Origenes de js-> http://localhost -> clic en crear
+
+4. Creamos una carpeta llamada public dentro del archivo principal 
+
+public-> index.html
+
+4.1. En el archivo index.html creamos el documento html5 y agregamos los script q se mencionan en la pagina [Google](https://developers.google.com/identity/sign-in/web/sign-in)
+*index.html*
+```
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Google Sign in Demo</title>
+    <script src="https://apis.google.com/js/platform.js" async defer></script>
+    <meta name="google-signin-client_id" content="YOUR_CLIENT_ID.apps.googleusercontent.com">
+</head>
+<body>
+    
+</body>
+</html>
+
+```
+
+se sustituye el client-id y quedaria con lo siguiente:
+
+```
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Google Sign in Demo</title>
+    <script src="https://apis.google.com/js/platform.js" async defer></script>
+    <meta name="google-signin-client_id" content="28427597669-cl7c45itf50uv9e3hpkj1nip0vpbm6ek.apps.googleusercontent.com">
+</head>
+<body>
+    
+</body>
+</html>
+
+```
+
+4.2 Agregando el boton de acceso y el script de la funcion:
+
+*index.js*
+
+```
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Google Sign-In Demo</title>
+    <script src="https://apis.google.com/js/platform.js" async defer></script>
+    <meta name="google-signin-client_id" content="28427597669-cl7c45itf50uv9e3hpkj1nip0vpbm6ek.apps.googleusercontent.com">
+</head>
+<body>
+    <div class="g-signin2" data-onsuccess="onSignIn"></div>
+
+    <script>
+        function onSignIn(googleUser) {
+            var profile = googleUser.getBasicProfile();
+            console.log('ID: ' + profile.getId()); // Do not send to your backend! Use an ID token instead.
+            console.log('Name: ' + profile.getName());
+            console.log('Image URL: ' + profile.getImageUrl());
+            console.log('Email: ' + profile.getEmail()); // This is null if the 'email' scope is not present.
+        }
+    </script>
+</body>
+</html>
+
+
+```
+
+4.3 En el archivo *server.js* agregamos la carpeta public (agregar directorio public)
+
+```
+
+// habilitar la carpeta public
+
+app.use(express.static(__dirname + '../public'));
+
+```
+
+quedando de la siguiente manera:
+*server.js*
+
+```
+require('./config/config');
+
+
+const express = require('express');
+const app=express();// instancia
+const mongoose = require('mongoose') //mongo
+
+var bodyParser = require('body-parser');
+
+// parse application/x-www-form-urlencoded
+app.use(bodyParser.urlencoded({ extended: false }))
+ 
+// parse application/json
+app.use(bodyParser.json())
+
+// habilitar la carpeta public
+
+app.use(express.static(__dirname + '../public'));
+
+
+
+
+//--------------USANDO EL ARCHIVO USUARIO.JS--------------------//
+// app.use(require('./routes/usuario'),(req, res) => {
+//     console.log('Time:', Date.now());
+//   }
+
+// );
+//----------------------------------//
+
+//--------------USANDO EL ARCHIVO LOGIN.JS--------------------//
+//Configuracion Global de rutas
+app.use(require('./routes/index'));
+
+//----------------------------------//
+
+mongoose.Promise=global.Promise;
+// const dbUrl= 'mongodb://localhost:27017/cafe';
+//mongoose.connect(dbUrl, {useCreateIndex:true, useNewUrlParser: true})
+mongoose.connect(process.env.URLBD, {useCreateIndex:true, useNewUrlParser: true})
+.then(mongoose => console.log('Conectando a la base de datos en el puerto 27017'))
+.catch(err => console.log(err));
+
+
+app.listen(process.env.PORT,()=>{
+    console.log('Server on port 3000 : ',3000)
+})
+
+```
+
+4.4 Para arreglar el directorio se debe agregar el paquete *path* y obtener el directorio requerido
+
+*server.js*
+```
+.
+.
+.
+const path = require('path');
+.
+.
+.
+
+// habilitar la carpeta public
+
+app.use(express.static(path.resolve(__dirname, '../public')));
+
+console.log(path.resolve(__dirname, '../public'));
+
+```
+
+Completo:
+
+*server.js*
+
+```
+require('./config/config');
+
+
+const express = require('express');
+const app=express();// instancia
+const mongoose = require('mongoose') //mongo
+
+const path = require('path');
+
+var bodyParser = require('body-parser');
+
+// parse application/x-www-form-urlencoded
+app.use(bodyParser.urlencoded({ extended: false }))
+ 
+// parse application/json
+app.use(bodyParser.json())
+
+// habilitar la carpeta public
+
+app.use(express.static(path.resolve(__dirname, '../public')));
+
+console.log(path.resolve(__dirname, '../public'));
+
+
+
+
+//--------------USANDO EL ARCHIVO USUARIO.JS--------------------//
+// app.use(require('./routes/usuario'),(req, res) => {
+//     console.log('Time:', Date.now());
+//   }
+
+// );
+//----------------------------------//
+
+//--------------USANDO EL ARCHIVO LOGIN.JS--------------------//
+//Configuracion Global de rutas
+app.use(require('./routes/index'));
+
+//----------------------------------//
+
+mongoose.Promise=global.Promise;
+// const dbUrl= 'mongodb://localhost:27017/cafe';
+//mongoose.connect(dbUrl, {useCreateIndex:true, useNewUrlParser: true})
+mongoose.connect(process.env.URLBD, {useCreateIndex:true, useNewUrlParser: true})
+.then(mongoose => console.log('Conectando a la base de datos en el puerto 27017'))
+.catch(err => console.log(err));
+
+
+app.listen(process.env.PORT,()=>{
+    console.log('Server on port 3000 : ',3000)
+})
+
+```
+
+5. Agregamos el boton salir de sesión
+
+*index.html*
+```
+
+    <a href="#" onclick="signOut();">Sign out</a>
+    <script>
+        function signOut() {
+            var auth2 = gapi.auth2.getAuthInstance();
+            auth2.signOut().then(function () {
+            console.log('User signed out.');
+            });
+        }
+    </script>
+
+```
+
+quedando de la siguiente manera:
+*index.html*
+
+```
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Google Sign-In Demo</title>
+    <script src="https://apis.google.com/js/platform.js" async defer></script>
+    <meta name="google-signin-client_id" content="28427597669-cl7c45itf50uv9e3hpkj1nip0vpbm6ek.apps.googleusercontent.com">
+</head>
+<body>
+    <div class="g-signin2" data-onsuccess="onSignIn"></div>
+
+    <a href="#" onclick="signOut();">Sign out</a>
+    <script>
+        function signOut() {
+            var auth2 = gapi.auth2.getAuthInstance();
+            auth2.signOut().then(function () {
+            console.log('User signed out.');
+            });
+        }
+    </script>
+
+
+    <script>
+        function onSignIn(googleUser) {
+            var profile = googleUser.getBasicProfile();
+            console.log('ID: ' + profile.getId()); // Do not send to your backend! Use an ID token instead.
+            console.log('Name: ' + profile.getName());
+            console.log('Image URL: ' + profile.getImageUrl());
+            console.log('Email: ' + profile.getEmail()); // This is null if the 'email' scope is not present.
+        }
+    </script>
+</body>
+</html>
+
+```
+
+### Autenticar token Google Sign-In. Validar token de google
+
+
+Guía en la pagina de [google](https://developers.google.com/identity/sign-in/web/backend-auth) 
+
+1. En el archivo de *public/index.html*
+
+Dentro de la función del archivo agregamos
+```
+.
+.
+.
+ var id_token = googleUser.getAuthResponse().id_token;
+            // console.log(id_token)
+            var xhr = new XMLHttpRequest();
+            xhr.open('POST', '/google');
+            xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+            xhr.onload = function() {
+                console.log('Signed in as: ' + xhr.responseText);
+            };
+            xhr.send('idtoken=' + id_token);
+.
+.
+.
+```
+
+Quedando de la siguiente manera:
+
+```
+    <script>
+        function onSignIn(googleUser) {
+            var profile = googleUser.getBasicProfile();
+            console.log('ID: ' + profile.getId()); // Do not send to your backend! Use an ID token instead.
+            console.log('Name: ' + profile.getName());
+            console.log('Image URL: ' + profile.getImageUrl());
+            console.log('Email: ' + profile.getEmail()); // This is null if the 'email' scope is not present.
+            var id_token = googleUser.getAuthResponse().id_token;
+            // console.log(id_token)
+            var xhr = new XMLHttpRequest();
+            xhr.open('POST', '/google');
+            xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+            xhr.onload = function() {
+                console.log('Signed in as: ' + xhr.responseText);
+            };
+            xhr.send('idtoken=' + id_token);
+        }
+    </script>
+
+```
+2. En el archivo del *router/login.js* agregamos el login de google
+
+```
+.
+.
+.
+
+//============================//
+// Inicio para verificar token de google
+//===========================//
+app.post('/google', (req, res)=> {
+
+   // let token = req.body;
+
+   res.json({
+       body:req.body
+   })
+
+
+});
+.
+.
+.
+
+```
+Acá vamos a obtener la respuesta del token en la consola
+
+
+3. En esa misma pagina de autenticación de google en la sección de NODE.JS, encontramos para la instalación:
+Desde la consola del archivo: 
+
+```
+npm install google-auth-library --save
+```
+
+4. En el archivo de *route/login.js* 
+Agregamos: 
+
+```
+.
+.
+.
+const {OAuth2Client} = require('google-auth-library');
+const client = new OAuth2Client(CLIENT_ID);
+.
+.
+.
+```
+
+Quedando de la siguiente manera:
+
+```
+const express = require('express');
+const bcrypt = require('bcrypt');
+const jwt = require('jsonwebtoken');
+
+//-Despues de la instalacion de la libreria de google
+const {OAuth2Client} = require('google-auth-library');
+const client = new OAuth2Client(CLIENT_ID);
+
+//-------------------------
+const app=express();// instancia
+
+const Usuario = require('../models/usuario');
+.
+.
+.
+.
+
+```
+
+5. Configuración del Token en google *route/login.js* : uso del payload
+
+```
+.
+.
+.
+
+//Configuraciones de google
+
+async function verify(token) {
+    const ticket = await client.verifyIdToken({
+        idToken: token,
+        audience: process.env.CLIENT_ID,  // Specify the CLIENT_ID of the app that accesses the backend
+        // Or, if multiple clients access the backend:
+        //[CLIENT_ID_1, CLIENT_ID_2, CLIENT_ID_3]
+    });
+    const payload = ticket.getPayload(); // se obtiene toda la info del usuario
+    console.log(payload.name);
+    console.log(payload.email);
+    console.log(payload.picture);
+  }
+
+//============================//
+// Inicio para verificar token de google
+//===========================//
+app.post('/google', (req, res)=> {
+
+    let token = req.body.idtoken;
+    verify(token);
+
+    res.json({
+        token
+    });
+
+
+});
+
+.
+.
+.
+
+
+```
+
+quedando de la siguiente manera:
+
+
+```
+const express = require('express');
+const bcrypt = require('bcrypt');
+const jwt = require('jsonwebtoken');
+
+//-Despues de la instalacion de la libreria de google
+const {OAuth2Client} = require('google-auth-library');
+const client = new OAuth2Client(process.env.CLIENT_ID);
+
+//-------------------------
+const app=express();// instancia
+
+const Usuario = require('../models/usuario');
+
+app.post('/login', (req, res)=> {
+        let body= req.body;
+
+        Usuario.findOne({email: body.email}, (err, usuarioDB)=> {
+            if(err){
+                return res.status(500).json({
+                    ok: false,
+                    err
+                });
+            };
+            if(!usuarioDB){
+                return res.status(500).json({
+                    ok: false,
+                    err:{
+                        message:'(Usuario) ó contraseña incorrectos'
+                    }
+                });
+            }
+            if(!bcrypt.compareSync(body.password, usuarioDB.password)){
+
+                return res.status(400).json({
+                    ok: false,
+                    err:{
+                        message:'Usuario ó (contraseña) incorrectos'
+                    }
+                });
+
+            }// si la contraseña hace match, se va a comparar ya que esta encriptada
+            let token= jwt.sign({
+                usuario: usuarioDB,
+
+            },process.env.SEED, {expiresIn: process.env.CADUCIDAD_TOKEN}) // expira en 30dias
+            res.json({
+                ok:true,
+                usuario: usuarioDB,
+                token:token
+            });
+        })
+        
+});
+
+//Configuraciones de google
+
+async function verify(token) {
+    const ticket = await client.verifyIdToken({
+        idToken: token,
+        audience: process.env.CLIENT_ID,  // Specify the CLIENT_ID of the app that accesses the backend
+        // Or, if multiple clients access the backend:
+        //[CLIENT_ID_1, CLIENT_ID_2, CLIENT_ID_3]
+    });
+    const payload = ticket.getPayload(); // se obtiene toda la info del usuario
+    console.log(payload.name);
+    console.log(payload.email);
+    console.log(payload.picture);
+  }
+
+//============================//
+// Inicio para verificar token de google
+//===========================//
+app.post('/google', (req, res)=> {
+
+    let token = req.body.idtoken;
+    verify(token);
+
+    res.json({
+        token
+    });
+
+
+});
+
+
+  
+
+module.exports = app
+
+```
+
+6. Utilizar el await en el post de google *routes/login.js* y verificar el token de google
+
+```
+const express = require('express');
+const bcrypt = require('bcrypt');
+const jwt = require('jsonwebtoken');
+
+//-Despues de la instalacion de la libreria de google
+const {OAuth2Client} = require('google-auth-library');
+const client = new OAuth2Client(process.env.CLIENT_ID);
+
+//-------------------------
+const app=express();// instancia
+
+const Usuario = require('../models/usuario');
+
+app.post('/login', (req, res)=> {
+        let body= req.body;
+
+        Usuario.findOne({email: body.email}, (err, usuarioDB)=> {
+            if(err){
+                return res.status(500).json({
+                    ok: false,
+                    err
+                });
+            };
+            if(!usuarioDB){
+                return res.status(500).json({
+                    ok: false,
+                    err:{
+                        message:'(Usuario) ó contraseña incorrectos'
+                    }
+                });
+            }
+            if(!bcrypt.compareSync(body.password, usuarioDB.password)){
+
+                return res.status(400).json({
+                    ok: false,
+                    err:{
+                        message:'Usuario ó (contraseña) incorrectos'
+                    }
+                });
+
+            }// si la contraseña hace match, se va a comparar ya que esta encriptada
+            let token= jwt.sign({
+                usuario: usuarioDB,
+
+            },process.env.SEED, {expiresIn: process.env.CADUCIDAD_TOKEN}) // expira en 30dias
+            res.json({
+                ok:true,
+                usuario: usuarioDB,
+                token:token
+            });
+        })
+        
+});
+
+//Configuraciones de google
+// el async regresa una promesa
+async function verify(token) {
+    const ticket = await client.verifyIdToken({
+        idToken: token,
+        audience: process.env.CLIENT_ID,  // Specify the CLIENT_ID of the app that accesses the backend
+        // Or, if multiple clients access the backend:
+        //[CLIENT_ID_1, CLIENT_ID_2, CLIENT_ID_3]
+    });
+    const payload = ticket.getPayload(); // se obtiene toda la info del usuario
+    console.log(payload.name);
+    console.log(payload.email);
+    console.log(payload.picture);
+    return {
+        nombre: payload.name,
+        email: payload.email,
+        img: payload.picture,
+        google:  true
+    }
+  }
+
+//============================//
+// Inicio para verificar token de google
+// para utilizar un await debo estar dentro de una funcion async por lo tanto se coloca 
+//dentro del post
+//===========================//
+app.post('/google', async(req, res)=> {
+    // console.log(req.body.idtoken);
+    let token = req.body.idtoken;
+
+    let googleUser= await verify(token)
+        .catch(e =>{
+            return res.status(403).json({
+                ok: false,
+                err: e
+            });
+        });
+        //conectar a la base de datos verficar si ya tengo ese usuario 
+    Usuario.findOne({ email: googleUser.email }, (err, usuarioDB) => {
+        if(err){
+            return res.status(500).json({
+                ok:false,
+                err
+            });
+        };
+
+        if(usuarioDB){
+            if(usuarioDB.google=== false){
+                return res.status(400).json({
+                    ok:false,
+                    err:{
+                        message: "Debe usar su autenticación normal"
+                    }
+                });
+            }else{
+                let token= jwt.sign({
+                    usuario: usuarioDB,
+    
+                },process.env.SEED, {expiresIn: process.env.CADUCIDAD_TOKEN}) // expira en 30dias
+                res.json({
+                    ok:true,
+                    usuario: usuarioDB,
+                    token
+                });
+            }
+        }else{
+            //si el usuario no existe en la bd
+            let usuario = new Usuario();
+
+            usuario.nombre= googleUser.nombre;
+            usuario.email= googleUser.email;
+            usuario.img= googleUser.img;
+            usuario.google=  true;
+            usuario.password= ':)'; //solo para pasar el password de la bd
+            usuario.save((err, usuarioDB) => {
+
+                if(err){
+                    return res.status(500).json({
+                        ok:false,
+                        err
+                    });
+                };
+                let token= jwt.sign({
+
+                    usuario:usuarioDB
+                },process.env.SEED ,{expiresIn: process.env.CADUCIDAD_TOKEN });
+               
+                    return res.json({
+                        ok: true,
+                        usuario:usuarioDB,
+                        token
+                    });
+
+            });
+        }
+
+    });
+
+    // res.json({
+    //    // token
+    //    usuario: googleUser
+    // });
+
+
+});
+
+
+  
+
+module.exports = app
+
+```
+
+7. Probar google sign-In desde Postman
+
+7.1 Agregar en el postman 
+
+POST-> {{url}}/google
+Body->x-www-form-urlencoded
+idtoken -> copiar el token generado al dar clic iniciar sesion google
+
+```
+Obtendremos los datos del token
+
+```
+
+7.2 Para generar el token dentro del Postman
+
+Post -> {{url}}/google
+Tests
+
+```
+let resp = pm.response.json();
+console.log(resp);
+if(resp.ok){
+        let token = resp.token;
+        pm.environment.set("token", token);
+        
+}else{
+    console.log('No se almaceno el token');
+}
+
+```
+
+Vamos al link de desarrollo guardado en el postman y borramos el token, actualizamos 
+
+volvemos al link de desarrollo en el postman y observamos el token generado
+
+### Generar la documentación necesaria de nuestro servicio
+
+1. Ir a postman y dar clic derecho a la collections, seleccionar publish docs. 
+2. Seleccionar el contenido Desarrollo o el que tengas, dar a clic publicar.
+
 
 
 
