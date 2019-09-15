@@ -2900,10 +2900,992 @@ headers -> Content-Type -> application/x-www-form-urlencoded
             token -> {{token}}
 
 
+5. Arreglos en la categoria delete *routes/categoria.js*
+
+```
+.
+.
+.
+
+//===========================
+// Borrar categoria
+//===========================
+
+app.delete('/categoria/:id', [verificaToken, verificaAdmin_Role], (req,res)=>{
+   
+    // solo el administrador puede borrar categorias
+    // Categoria.findByIdAndDelete
+    let id = req.params.id;
+    Categoria.findByIdAndRemove(id, (err, categoriaBorrada)=>{
+        if(err){
+            return res.status(500).json({
+                ok:false,
+                err:{
+                    message: "No se ha logrado borrar la categoria"
+                }
+            })
+
+        };
+        if(!categoriaBorrada){
+            return res.status(400).json({
+                ok:false,
+                err:{
+                    message: 'Categoria no encontrada'
+                }
+            })
+        }
+
+       res.json({
+           ok:true,
+           message:'Categoria Borrada',
+           categoria: categoriaBorrada
+       })  
+    })
+})
+.
+.
+.
+
+```
+
+6. Revisar en el postman
+
+DELETE -> {{url}}/categoria/coloca_el_id_de_la_bd_de_esa_categoria
+
+ body -> descripcion -> Bebida Fria borrar
+ headers -> Content-Type -> application/x-www-form-urlencoded
+            token -> {{token}}
+
+
+*No olvides actualizar el token*
+
+7. Agregar el GET de Categorias y el GET por ID
+
+*routes/categoria.js*
+
+```
+//===========================
+//Mostrar todas las categorias
+//===========================
+app.get('/categoria', verificaToken , (req,res)=>{
+
+    Categoria.find({})
+        .exec((err, categorias) =>{
+            if(err){
+                return res.status(500).json({
+                    ok:false,
+                    err
+                });
+            }
+            res.json({
+                ok:true,
+                categorias
+            });
+        })
 
 
 
+})
 
+//===========================
+//Mostrar categoria por ID
+//===========================
+
+app.get('/categoria/:id', verificaToken, (req,res)=>{
+// Categoria.findById(...)
+    let id = req.params.id;
+
+    Categoria.findById(id, (err, categoriaDB) =>{
+        if(err){
+            return res.status(500).json({
+                ok:false,
+                err
+            });
+        }
+
+        if(!categoriaDB){
+            return res.status(400).json({
+                ok:false,
+                err:{
+                    message: "El ID de esa categoria no existe en la base de datos"
+                }
+            });
+        }
+        res.json({
+            ok: true,
+            categoria: categoriaDB
+        });
+
+    });
+
+})
+
+```
+
+Quedando de la siguiente manera: 
+*routes/categoria.js*
+
+```
+const express = require('express');
+
+const { verificaToken, verificaAdmin_Role } = require('../middlewares/autenticacion');
+
+let app = express();
+
+
+
+let Categoria = require('../models/categoria');
+//===========================
+//Mostrar todas las categorias
+//===========================
+app.get('/categoria', verificaToken , (req,res)=>{
+
+    Categoria.find({})
+        .exec((err, categorias) =>{
+            if(err){
+                return res.status(500).json({
+                    ok:false,
+                    err
+                });
+            }
+            res.json({
+                ok:true,
+                categorias
+            });
+        })
+
+
+
+})
+
+//===========================
+//Mostrar categoria por ID
+//===========================
+
+app.get('/categoria/:id', verificaToken, (req,res)=>{
+// Categoria.findById(...)
+    let id = req.params.id;
+
+    Categoria.findById(id, (err, categoriaDB) =>{
+        if(err){
+            return res.status(500).json({
+                ok:false,
+                err
+            });
+        }
+
+        if(!categoriaDB){
+            return res.status(400).json({
+                ok:false,
+                err:{
+                    message: "El ID de esa categoria no existe en la base de datos"
+                }
+            });
+        }
+        res.json({
+            ok: true,
+            categoria: categoriaDB
+        });
+
+    });
+
+})
+
+//===========================
+//Crear nueva categoria
+//===========================
+
+app.post('/categoria', verificaToken, (req, res) => {
+    // regresa la nueva categoria
+    // req.usuario._id
+    let body = req.body;
+
+    let categoria = new Categoria({
+        descripcion: body.descripcion,
+        usuario: req.usuario._id
+    });
+
+
+    categoria.save((err, categoriaDB) => {
+
+        if (err) {
+            return res.status(500).json({
+                ok: false,
+                err
+            });
+        }
+
+        if (!categoriaDB) {
+            return res.status(400).json({
+                ok: false,
+                err
+            });
+        }
+
+        res.json({
+            ok: true,
+            categoria: categoriaDB
+        });
+
+
+    });
+
+
+});
+
+//===========================
+//
+//===========================
+
+
+app.put('/categoria/:id', verificaToken, (req, res) => {
+
+    let id = req.params.id;
+    let body = req.body;
+
+    let descCategoria = {
+        descripcion: body.descripcion
+    };
+
+    Categoria.findByIdAndUpdate(id, descCategoria, { new: true, runValidators: true }, (err, categoriaDB) => {
+
+        if (err) {
+            return res.status(500).json({
+                ok: false,
+                err
+            });
+        }
+
+        if (!categoriaDB) {
+            return res.status(400).json({
+                ok: false,
+                err
+            });
+        }
+
+        res.json({
+            ok: true,
+            categoria: categoriaDB
+        });
+
+    });
+
+
+});
+
+
+//===========================
+// Borrar categoria
+//===========================
+
+app.delete('/categoria/:id', [verificaToken, verificaAdmin_Role], (req,res)=>{
+   
+    // solo el administrador puede borrar categorias
+    // Categoria.findByIdAndDelete
+    let id = req.params.id;
+    Categoria.findByIdAndRemove(id, (err, categoriaBorrada)=>{
+        if(err){
+            return res.status(500).json({
+                ok:false,
+                err:{
+                    message: "No se ha logrado borrar la categoria"
+                }
+            })
+
+        };
+        if(!categoriaBorrada){
+            return res.status(400).json({
+                ok:false,
+                err:{
+                    message: 'Categoria no encontrada'
+                }
+            })
+        }
+
+       res.json({
+           ok:true,
+           message:'Categoria Borrada',
+           categoria: categoriaBorrada
+       })  
+    })
+})
+
+
+
+module.exports = app;
+
+
+```
+
+8. Agregar populate para traer datos de usuarios mediante su id en categorias:
+por lo que en postman apareceran en este caso id, nombre y email
+*routes/categoria.js*
+
+```
+.
+.
+.
+//===========================
+//Mostrar todas las categorias
+//===========================
+app.get('/categoria', verificaToken , (req,res)=>{
+
+    Categoria.find({})
+        .populate('usuario', 'nombre email') // que queremos que envie
+        .exec((err, categorias) =>{
+            if(err){
+                return res.status(500).json({
+                    ok:false,
+                    err
+                });
+            }
+            res.json({
+                ok:true,
+                categorias
+            });
+        })
+
+
+
+})
+.
+.
+.
+
+```
+
+9. Ordenar de manera ascendente la descripcion con sort de js
+
+*routes/categoria.js*
+
+```
+.
+.
+.
+
+//===========================
+//Mostrar todas las categorias
+//===========================
+app.get('/categoria', verificaToken , (req,res)=>{
+
+    Categoria.find({})
+        .sort('descripcion') // ordenar
+        .populate('usuario', 'nombre email') // que queremos que envie
+        .exec((err, categorias) =>{
+            if(err){
+                return res.status(500).json({
+                    ok:false,
+                    err
+                });
+            }
+            res.json({
+                ok:true,
+                categorias
+            });
+        })
+
+
+
+})
+
+.
+.
+.
+
+
+```
+
+10. Final de *routes/categoria.js*
+
+```
+const express = require('express');
+
+const { verificaToken, verificaAdmin_Role } = require('../middlewares/autenticacion');
+
+let app = express();
+
+
+
+let Categoria = require('../models/categoria');
+//===========================
+//Mostrar todas las categorias
+//===========================
+app.get('/categoria', verificaToken , (req,res)=>{
+
+    Categoria.find({})
+        .sort('descripcion')// ordenar por descripcion
+        .populate('usuario', 'nombre email') // que queremos que envie
+        .exec((err, categorias) =>{
+            if(err){
+                return res.status(500).json({
+                    ok:false,
+                    err
+                });
+            }
+            res.json({
+                ok:true,
+                categorias
+            });
+        })
+
+
+
+})
+
+//===========================
+//Mostrar categoria por ID
+//===========================
+
+app.get('/categoria/:id', verificaToken, (req,res)=>{
+// Categoria.findById(...)
+    let id = req.params.id;
+
+    Categoria.findById(id, (err, categoriaDB) =>{
+        if(err){
+            return res.status(500).json({
+                ok:false,
+                err
+            });
+        }
+
+        if(!categoriaDB){
+            return res.status(400).json({
+                ok:false,
+                err:{
+                    message: "El ID de esa categoria no existe en la base de datos"
+                }
+            });
+        }
+        res.json({
+            ok: true,
+            categoria: categoriaDB
+        });
+
+    });
+
+})
+
+//===========================
+//Crear nueva categoria
+//===========================
+
+app.post('/categoria', verificaToken, (req, res) => {
+    // regresa la nueva categoria
+    // req.usuario._id
+    let body = req.body;
+
+    let categoria = new Categoria({
+        descripcion: body.descripcion,
+        usuario: req.usuario._id
+    });
+
+
+    categoria.save((err, categoriaDB) => {
+
+        if (err) {
+            return res.status(500).json({
+                ok: false,
+                err
+            });
+        }
+
+        if (!categoriaDB) {
+            return res.status(400).json({
+                ok: false,
+                err
+            });
+        }
+
+        res.json({
+            ok: true,
+            categoria: categoriaDB
+        });
+
+
+    });
+
+
+});
+
+//===========================
+//
+//===========================
+
+
+app.put('/categoria/:id', verificaToken, (req, res) => {
+
+    let id = req.params.id;
+    let body = req.body;
+
+    let descCategoria = {
+        descripcion: body.descripcion
+    };
+
+    Categoria.findByIdAndUpdate(id, descCategoria, { new: true, runValidators: true }, (err, categoriaDB) => {
+
+        if (err) {
+            return res.status(500).json({
+                ok: false,
+                err
+            });
+        }
+
+        if (!categoriaDB) {
+            return res.status(400).json({
+                ok: false,
+                err
+            });
+        }
+
+        res.json({
+            ok: true,
+            categoria: categoriaDB
+        });
+
+    });
+
+
+});
+
+
+//===========================
+// Borrar categoria
+//===========================
+
+app.delete('/categoria/:id', [verificaToken, verificaAdmin_Role], (req,res)=>{
+   
+    // solo el administrador puede borrar categorias
+    // Categoria.findByIdAndDelete
+    let id = req.params.id;
+    Categoria.findByIdAndRemove(id, (err, categoriaBorrada)=>{
+        if(err){
+            return res.status(500).json({
+                ok:false,
+                err:{
+                    message: "No se ha logrado borrar la categoria"
+                }
+            })
+
+        };
+        if(!categoriaBorrada){
+            return res.status(400).json({
+                ok:false,
+                err:{
+                    message: 'Categoria no encontrada'
+                }
+            })
+        }
+
+       res.json({
+           ok:true,
+           message:'Categoria Borrada',
+           categoria: categoriaBorrada
+       })  
+    })
+})
+
+
+
+module.exports = app;
+
+
+```
+
+### Crear archivo producto en el modelo y routes
+
+1. Modelo -> *models/producto.js*
+
+```
+var mongoose = require('mongoose');
+var Schema = mongoose.Schema;
+
+
+var productoSchema = new Schema({
+    nombre: { type: String, required: [true, 'El nombre es necesario'] },
+    precioUni: { type: Number, required: [true, 'El precio únitario es necesario'] },
+    descripcion: { type: String, required: false },
+    disponible: { type: Boolean, required: true, default: true },
+    categoria: { type: Schema.Types.ObjectId, ref: 'Categoria', required: true },
+    usuario: { type: Schema.Types.ObjectId, ref: 'Usuario' }
+});
+
+
+module.exports = mongoose.model('Producto', productoSchema);
+
+```
+
+2. Agregar en *routes/producto.js*
+
+```
+const express = require('express');
+
+const {verificaToken} =require('../middlewares/autenticacion');
+
+let app = express();
+
+let Producto = require('../models/producto');
+
+
+//==================
+// OBTENER PRODUCTOS
+//==================
+
+app.get('/producto', verificaToken,(req,res)=>{
+
+    let desde = req.query.desde || 0 ;
+    desde = Number(desde);
+
+    Producto.find({disponible: true}) // solo lo que estan disponibles
+        .skip(desde)
+        .limit(5)    
+        .populate('categoria' , 'descripcion')
+        .populate('usuario', 'nombre email')
+        .exec((err, productos)=>{
+            if(err){
+                return res.status(500).json({
+                    ok: false,
+                    err
+                });
+            }
+            res.json({
+                ok:true,
+                producto: productos
+            })
+        })
+
+    // traer todos los productos
+    // populate usuario categoria
+    //paginado
+
+})
+
+//==================
+// OBTENER PRODUCTOS POR ID
+//==================
+
+app.get('/producto/:id', verificaToken,(req,res)=>{
+    
+    let id= req.params.id;
+    
+    Producto.findById(id)
+        .populate('categoria', 'descripcion')
+        .populate('usuario', 'nombre email')
+        .exec((err, productoBD)=>{
+            
+                if(err){
+                    return res.status(500).json({
+                        ok:false,
+                        err
+                    });
+                }
+                if(!productoBD){
+                    return res.status(400).json({
+                        ok:false,
+                        err:{
+                            message: 'El ID de este Producto no se encuentra en la base de datos'
+                        }
+                    });
+                }
+                res.json({
+                    ok:true,
+                    producto: productoBD
+                })
+            })
+    // populate usuario categoria
+    //paginado
+
+})
+
+//==================
+// CREAR UN NUEVO PRODUCTO
+//==================
+
+app.post('/producto', verificaToken, (req,res)=>{
+
+    let body = req.body;
+
+    let producto = new Producto({
+        usuario: req.usuario._id,
+        nombre: body.nombre,
+        precioUni: body.precioUni,
+        descripcion: body.descripcion,
+        disponible: true,
+        categoria:body.categoria
+       
+    });
+
+    producto.save((err, productoBD)=>{
+        if(err){
+            return res.status(500).json({
+                ok:false,
+                err
+            });
+        }
+
+        if(!productoBD){
+            return res.status(400).json({
+                ok:false,
+                err:{
+                    message:'El producto no pudo ser guardado'
+                }
+            });
+
+        }
+        res.status(201).json({
+            ok:true,
+            producto:productoBD
+        })
+    })
+    
+    // grabar un usuario
+    //grabar una categoria del listado
+
+})
+
+//==================
+// ACTUALIZAR UN PRODUCTO
+//==================
+
+app.put('/producto/:id', verificaToken, (req,res)=>{
+    
+    let id= req.params.id;
+    let body = req.body;
+
+    let newProductos = {
+        nombre: body.nombre,
+        precioUni: body.precioUni,
+        descripcion: body.descripcion,
+        disponible: true,
+        categoria:body.categoria
+    }
+    Producto.findByIdAndUpdate(id, newProductos ,{new: true,  runValidators: true }, (err, productoBD)=>{
+        if(err){
+            return res.status(500).json({
+                ok: false,
+                err
+            });
+        }
+        if(!productoBD){
+            return res.status(400).json({
+                ok: false,
+                err:{
+                    message: 'No se pudo actualizar el producto'
+                }
+            });
+        }
+        res.json({
+            ok: true,
+            producto: productoBD
+        })
+    })
+
+    // grabar un usuario
+    //grabar una categoria del listado
+
+})
+
+//==================
+// BORRAR UN PRODUCTO
+//==================
+
+app.delete('/producto/:id', verificaToken ,(req,res)=>{
+
+    let id = req.params.id;
+
+    /*
+    *ESTE METODO CAMBIA SOLO EL ESTADO DISPONIBLE A FALSE */
+    Producto.findById(id, (err, productoDB) => {
+
+        if(err){
+            return res.status(500).json({
+                ok: false,
+                err:{
+                    message: "No se ha logrado borrar el producto"
+                }
+            });
+        }
+
+        if(!productoDB){
+            return res.status(400).json({
+                ok: false,
+                err:{
+                    message: "No se ha logrado borrar el producto, verificar el id"
+                }
+            });
+        }
+
+        productoDB.disponible = false;
+
+        productoDB.save((err, productoBorrado)=>{
+
+            if(err){
+                return res.status(500).json({
+                    ok: false,
+                    err:{
+                        message: "No se ha logrado borrar el producto"
+                    }
+                });
+            }
+            res.status(201).json({
+                ok:true,
+                producto: productoBorrado,
+                mensaje: 'Producto borrado'
+
+
+            })
+
+
+        })
+
+        
+
+
+    })
+
+/* Este metodo borra todo 
+    Producto.findByIdAndDelete(id, (err, productoBorrado)=>{
+        if(err){
+            return res.status(500).json({
+                ok: false,
+                err:{
+                    message: "No se ha logrado borrar el producto, verificar el id"
+                }
+            });
+        }
+        if(!productoBorrado){
+            return res.status(400).json({
+                ok: false,
+                err: {
+                    message:'No se logro borrar el producto'
+                }
+            });
+ 
+        }
+        res.json({
+            ok: true,
+            producto: productoBorrado
+        })
+    }) */
+    
+    // grabar un usuario
+    //grabar una categoria del listado
+    //pasar disponible a falso
+})
+
+module.exports = app;
+
+
+```
+3. Agregar en *routes/index.js* producto creado en routes
+
+```
+const express = require('express');
+
+const app=express();// instancia
+
+app.use(require('./usuario'));
+app.use(require('./login'));
+app.use(require('./categoria'));
+app.use(require('./producto')); //agregado
+
+
+module.exports = app;
+
+```
+### Realizar busqueda en base de datos
+
+1. En *routes/producto* agregamos una seccion para hacer la busqueda mediante el termino:
+*routes/producto* 
+```
+
+//==================
+// BUSCAR PRODUCTO
+//==================
+app.get('/producto/buscar/:termino', verificaToken, (req,res)=>{
+    let termino = req.params.termino;
+    Producto.find({nombre: termino}) // hacer un match con el termino 
+        .populate('categoria', 'descripcion')
+        .exec((err, producto)=>{
+            if(err){
+                return res.status(500).json({
+                    ok: false,
+                    producto
+                });
+            }
+            res.json({
+                ok: true,
+                producto
+
+            })
+        })
+
+})
+```
+
+Un match es una comparativa o una busqueda compativa de ese termino o frase es decir si queremos que se haga la busqueda o match mediante el nombre del producto colocamos nombre:termino
+
+2. Para verificar el resultado nos dirijimos a postman y agregamos 
+
+GET -> {{url}}/producto/buscar/Pimenton -> enter
+
+No olvidar que en el HEADERS -> Key-> token ; Value -> {{token}}
+
+obtendremos el producto que contenga el nombre de Pimenton
+
+3. Hacer aparecer en la busqueda un filtro, es decir que sea filtrada todos los productos que contengan como nombre ensalada 
+3.1 Se hace uso del regex que es una expresion regular para hacerlo no sensible para mayusculas y minusculas
+Ahora en vez de enviar el termino envio el regex q es la expresion regular 
+
+3.2 Se cambio el nombre por la descripcion en la busqueda pq el nombre es solo el articulo en cambio la descripcion marca la busqueda 
+Por lo tanto:
+
+*routes/producto*
+
+```
+
+
+//==================
+// BUSCAR PRODUCTO
+//==================
+app.get('/producto/buscar/:termino', verificaToken, (req,res)=>{
+    let termino = req.params.termino;
+
+    // enviar una expresion regular, y hacerlo no sensible para mayusculas y minusculas
+
+    let regex = new RegExp(termino , 'i');
+    // en vez de enviar el termino, envio la expresion regular
+
+    Producto.find({descripcion: regex}) // hacer un match con el termino
+        .populate('categoria', 'descripcion')
+        .exec((err, producto)=>{
+            if(err){
+                return res.status(500).json({
+                    ok: false,
+                    producto
+                });
+            }
+            res.json({
+                ok: true,
+                producto
+
+            })
+        })
+
+})
+
+
+
+```
+ 
+
+
+4. Para verificar el resultado nos dirijimos a postman y agregamos 
+
+GET -> {{url}}/producto/buscar/Ensaladas -> enter
+
+No olvidar que en el HEADERS -> Key-> token ; Value -> {{token}}
+
+obtendremos el producto que contenga el todas la ensaladas agregadas en su descripcion
 
 
 

@@ -10,7 +10,23 @@ let Categoria = require('../models/categoria');
 //===========================
 //Mostrar todas las categorias
 //===========================
-app.get('/categoria', (req,res)=>{
+app.get('/categoria', verificaToken , (req,res)=>{
+
+    Categoria.find({})
+        .sort('descripcion')// ordenar por descripcion
+        .populate('usuario', 'nombre email') // que queremos que envie
+        .exec((err, categorias) =>{
+            if(err){
+                return res.status(500).json({
+                    ok:false,
+                    err
+                });
+            }
+            res.json({
+                ok:true,
+                categorias
+            });
+        })
 
 
 
@@ -20,15 +36,24 @@ app.get('/categoria', (req,res)=>{
 //Mostrar categoria por ID
 //===========================
 
-app.get('/categoria/:id', (req,res)=>{
+app.get('/categoria/:id', verificaToken, (req,res)=>{
 // Categoria.findById(...)
-let id = req.params.id;
+    let id = req.params.id;
 
     Categoria.findById(id, (err, categoriaDB) =>{
         if(err){
-            return res.status(400).json({
+            return res.status(500).json({
                 ok:false,
                 err
+            });
+        }
+
+        if(!categoriaDB){
+            return res.status(400).json({
+                ok:false,
+                err:{
+                    message: "El ID de esa categoria no existe en la base de datos"
+                }
             });
         }
         res.json({
@@ -36,7 +61,7 @@ let id = req.params.id;
             categoria: categoriaDB
         });
 
-    })
+    });
 
 })
 
@@ -122,19 +147,19 @@ app.put('/categoria/:id', verificaToken, (req, res) => {
 
 });
 
-/*
+
 //===========================
-//
+// Borrar categoria
 //===========================
 
-app.delete('/categoria:id', [verificaAdmin_Role], (req,res)=>{
+app.delete('/categoria/:id', [verificaToken, verificaAdmin_Role], (req,res)=>{
    
     // solo el administrador puede borrar categorias
     // Categoria.findByIdAndDelete
     let id = req.params.id;
-    Categoria.findByIdAndUpdate(id, (err, categoriaBorrada)=>{
+    Categoria.findByIdAndRemove(id, (err, categoriaBorrada)=>{
         if(err){
-            return res.status(400).json({
+            return res.status(500).json({
                 ok:false,
                 err:{
                     message: "No se ha logrado borrar la categoria"
@@ -153,11 +178,12 @@ app.delete('/categoria:id', [verificaAdmin_Role], (req,res)=>{
 
        res.json({
            ok:true,
+           message:'Categoria Borrada',
            categoria: categoriaBorrada
        })  
     })
 })
 
-*/
+
 
 module.exports = app;
