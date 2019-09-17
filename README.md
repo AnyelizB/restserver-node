@@ -3887,7 +3887,15 @@ No olvidar que en el HEADERS -> Key-> token ; Value -> {{token}}
 
 obtendremos el producto que contenga el todas la ensaladas agregadas en su descripcion
 
+### Subir archivo Express upload
 
+1. Instalar desde la terminal {express-fileupload}(https://www.npmjs.com/package/express-fileupload) `npm install --save express-fileupload` 
+
+2. Crear la carpeta upload en la principal
+
+3. Crear el archivo *routes/upload.js* y agregar el contenido post en la siguiente {express-fileupload}(https://www.npmjs.com/package/express-fileupload)
+
+4. 
 
 
 
